@@ -65,6 +65,9 @@ pub enum Constants {
     ZMQ_MAXMSGSIZE        = 22,
     ZMQ_SNDHWM            = 23,
     ZMQ_RCVHWM            = 24,
+    ZMQ_MULTICAST_HOPS    = 25,
+    ZMQ_RCVTIMEO          = 27,
+    ZMQ_SNDTIMEO          = 28,
 
     ZMQ_MAX_VSM_SIZE      = 30,
     ZMQ_DELIMITER         = 31,
@@ -582,6 +585,16 @@ impl Socket {
         setsockopt_i32(self.sock, Constants::ZMQ_BACKLOG.to_raw(), value)
     }
 
+    pub fn set_rcvtimeo(&self, value: Option<u32>) -> Result<(), Error> {
+        let value = if value.is_some() { value.unwrap() as i32 } else { -1 };
+        setsockopt_i32(self.sock, Constants::ZMQ_RCVTIMEO.to_raw(), value)
+    }
+
+    pub fn set_sndtimeo(&self, value: Option<u32>) -> Result<(), Error> {
+        let value = if value.is_some() { value.unwrap() as i32 } else { -1 };
+        setsockopt_i32(self.sock, Constants::ZMQ_SNDTIMEO.to_raw(), value)
+    }
+
     pub fn as_poll_item<'a>(&self, events: i16) -> PollItem {
         PollItem {
             socket: self.sock,
@@ -790,7 +803,7 @@ impl fmt::Debug for Error {
 
 macro_rules! getsockopt_num(
     ($name:ident, $c_ty:ty, $ty:ty) => (
-        #[allow(trivial_casts)]    
+        #[allow(trivial_casts)]
         fn $name(sock: *mut libc::c_void, opt: c_int) -> Result<$ty, Error> {
             unsafe {
                 let mut value: $c_ty = 0;
